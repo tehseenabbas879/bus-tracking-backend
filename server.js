@@ -27,7 +27,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // API endpoint to handle incoming GPS data
-app.post("/api/location", async (req, res) => {
+app.put("/api/location", async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
     if (!latitude || !longitude) {
