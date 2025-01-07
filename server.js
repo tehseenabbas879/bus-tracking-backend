@@ -26,30 +26,19 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// API endpoint to handle updating GPS data with PUT
-app.put("/api/location/:id", async (req, res) => {
+// API endpoint to handle incoming GPS data
+app.post("/api/location", async (req, res) => {
   try {
-    const { id } = req.params; // Extract ID from URL parameters
-    const { latitude, longitude } = req.body; // Extract latitude and longitude from request body
-
+    const { latitude, longitude } = req.body;
     if (!latitude || !longitude) {
       return res.status(400).send("Latitude and longitude are required");
     }
 
-    // Find and update the document by ID
-    const updatedLocation = await Location.findByIdAndUpdate(
-      id,
-      { latitude, longitude, timestamp: Date.now() }, // Update the fields
-      { new: true } // Return the updated document
-    );
-
-    if (!updatedLocation) {
-      return res.status(404).send("Location not found");
-    }
-
-    res.status(200).send("Location updated successfully");
+    const location = new Location({ latitude, longitude });
+    await location.save();
+    res.status(200).send("Location saved successfully");
   } catch (error) {
-    console.error("Error updating location:", error);
+    console.error("Error saving location:", error);
     res.status(500).send("Internal server error");
   }
 });
