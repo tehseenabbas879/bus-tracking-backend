@@ -4,12 +4,14 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 // Replace this with your actual MongoDB URI
-const mongoURI = "mongodb+srv://abdullah:Iamabdullah%40mongodb@bustracking.4o1nf.mongodb.net/IOT_Project";
+const mongoURI =
+  "mongodb+srv://abdullah:Iamabdullah%40mongodb@bustracking.4o1nf.mongodb.net/IOT_Project";
 
 // Connect to MongoDB
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Connected to MongoDB"))
-  .catch(err => console.error("MongoDB connection error:", err));
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // Define a schema for storing GPS data
 const LocationSchema = new mongoose.Schema({
@@ -30,16 +32,36 @@ app.use(bodyParser.json());
 app.put("/api/location", async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
+
     if (!latitude || !longitude) {
-      return res.status(400).send("Latitude and longitude are required");
+      return res
+        .status(400)
+        .json({ error: "Latitude and Longitude are required" });
     }
 
-    const location = new Location({ latitude, longitude });
+    // Find the latest location (you can modify this logic to search by other criteria if needed)
+    let location = await Location.findOne().sort({ updatedAt: -1 });
+
+    if (location) {
+      // If a location exists, update the latitude, longitude, and timestamp
+      location.latitude = latitude;
+      location.longitude = longitude;
+      location.updatedAt = new Date(); // Set the updatedAt timestamp
+    } else {
+      // If no location exists, create a new one
+      location = new Location({ latitude, longitude });
+    }
+
+    // Save the location (whether updated or newly created)
     await location.save();
-    res.status(200).send("Location saved successfully");
+
+    res.status(200).json({
+      message: "Location updated successfully",
+      location,
+    });
   } catch (error) {
-    console.error("Error saving location:", error);
-    res.status(500).send("Internal server error");
+    console.error("Error updating location:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -56,4 +78,6 @@ app.get("/api/location", async (req, res) => {
 
 // Start the server
 const PORT = 3000; // You can change this port if needed
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
